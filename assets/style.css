@@ -1,0 +1,172 @@
+:root {
+	--bg: #edf1f5;
+	--ink: #101828;
+	--muted: #56637a;
+	--line: #cbd5e1;
+	--ring: #1f3fff;
+	--card: #f8fafc;
+	box-sizing: border-box;
+	padding-top: env(safe-area-inset-top, 0px);
+	padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--bg: #09090b;
+		--ink: #f4f4f5;
+		--muted: #a1a1aa;
+		--line: #2a2a2e;
+		--ring: #8686ff;
+		--card: #19191c;
+	}
+}
+* {
+	box-sizing: border-box;
+}
+html {
+	scroll-padding-top: env(safe-area-inset-top, 0px);
+}
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--ink);
+	font:
+		400 16px/1.55 "Bricolage Grotesque",
+		system-ui,
+		sans-serif;
+}
+.wrap {
+	max-width: 1080px;
+	margin: 0 auto;
+	padding: 0px 20px;
+	display: grid;
+	gap: 40px;
+}
+.hero {
+	min-height: 100vh;
+	min-height: 100dvh;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	padding-block: 24px;
+	align-items: center;
+}
+@media (min-width: 860px) {
+	.wrap {
+		grid-template-columns: 340px 1fr;
+		gap: 64px;
+	}
+	.hero {
+		position: sticky;
+		top: 0;
+		align-self: start;
+		height: 100dvh;
+		min-height: 0;
+		overflow-y: auto;
+		padding-block: 24px;
+		align-items: flex-start;
+	}
+}
+h1 {
+	font-size: clamp(2rem, 5vw, 2.5rem);
+	line-height: 1.05;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	margin: 0 0 16px;
+	text-align: left;
+}
+.lead {
+	color: var(--muted);
+	max-width: 44ch;
+	margin: 0 0 20px;
+}
+svg {
+	width: 100%;
+	max-width: 320px;
+	height: auto;
+	display: block;
+	margin: 8px 0 12px;
+}
+svg path {
+	fill: none;
+	stroke: var(--ring);
+	stroke-width: 1.1;
+	stroke-linejoin: round;
+}
+.hash {
+	font:
+		400 13px/1.4 "JetBrains Mono",
+		ui-monospace,
+		monospace;
+	word-break: break-all;
+	color: var(--ink);
+	margin: 0 0 14px;
+}
+.btns {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+button {
+	font:
+		600 14px "Bricolage Grotesque",
+		system-ui,
+		sans-serif;
+	color: var(--ink);
+	background: transparent;
+	border: 1.5px solid var(--ink);
+	border-radius: 999px;
+	padding: 9px 18px;
+	cursor: pointer;
+}
+button:hover {
+	background: var(--ink);
+	color: var(--bg);
+}
+button:focus-visible {
+	outline: 3px solid var(--ring);
+	outline-offset: 2px;
+}
+h2 {
+	font-size: 1.15rem;
+	margin: 0 0 6px;
+	font-weight: 600;
+}
+section {
+	margin: 32px 0px;
+}
+dl {
+	margin: 0;
+	border-top: 1.5px solid var(--ink);
+}
+.row {
+	display: grid;
+	grid-template-columns: minmax(120px, 190px) 1fr;
+	gap: 4px 16px;
+	padding: 10px 0;
+	border-bottom: 1px solid var(--line);
+}
+@media (max-width: 560px) {
+	.row {
+		grid-template-columns: 1fr;
+	}
+}
+dt {
+	color: var(--muted);
+}
+dd {
+	margin: 0;
+	font:
+		400 13.5px/1.5 "JetBrains Mono",
+		ui-monospace,
+		monospace;
+	word-break: break-word;
+	overflow-wrap: anywhere;
+}
+.note {
+	background: var(--card);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 14px 16px;
+	color: var(--muted);
+	font-size: 14.5px;
+}
