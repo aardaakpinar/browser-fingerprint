@@ -71,40 +71,6 @@
 			setTimeout(done, 4000);
 		});
 	}
-	async function queryNet() {
-		const rows = [],
-			r = await rtc();
-		if (!r) rows.push(["WebRTC", "desteklenmiyor veya engellendi"]);
-		else {
-			rows.push(["Genel IP (STUN)", [...r.pub].join(", ") || "alınamadı (UDP engelli olabilir)"]);
-			rows.push(["Yerel IP", [...r.loc].join(", ") || (r.mdns ? "gizli (mDNS ile maskelenmiş, " + r.mdns + " aday)" : "görünmüyor")]);
-		}
-		const t0 = performance.now();
-		try {
-			const ac = new AbortController(),
-				to = setTimeout(() => ac.abort(), 6000);
-			const j = await (await fetch("https://ipwho.is/", { signal: ac.signal })).json();
-			clearTimeout(to);
-			if (j.success === false) throw new Error(j.message);
-			const c = j.connection || {},
-				btz = Intl.DateTimeFormat().resolvedOptions().timeZone;
-			rows.push(["IP (API)", j.ip + " (" + j.type + ")"]);
-			rows.push(["Konum", [j.city, j.region, j.country].filter(Boolean).join(", ") || "—"]);
-			rows.push(["Koordinat (yaklaşık)", j.latitude + ", " + j.longitude]);
-			rows.push(["Sağlayıcı (ISP)", c.isp || "—"]);
-			rows.push(["Kuruluş", c.org || "—"]);
-			rows.push(["ASN", c.asn ? "AS" + c.asn : "—"]);
-			rows.push(["Alan adı", c.domain || "—"]);
-			const itz = j.timezone && j.timezone.id;
-			rows.push(["IP saat dilimi", itz || "—"]);
-			rows.push(["Saat dilimi tutarlılığı", itz === btz ? "tutarlı" : "uyuşmuyor (tarayıcı: " + btz + "); VPN/proxy ya da seyahat olabilir"]);
-			if (r && r.pub.size && !r.pub.has(j.ip)) rows.push(["IP eşleşmesi", "STUN ve API farklı IP gördü (VPN, proxy ya da çoklu çıkış olabilir)"]);
-			rows.push(["API gecikmesi", msf(performance.now() - t0)]);
-		} catch (e) {
-			rows.push(["IP sorgusu", "başarısız: bu sayfanın güvenlik politikası dış isteği engelliyor olabilir. Dosyayı yerelde ya da kendi sunucunda açarsan çalışır."]);
-		}
-		return rows;
-	}
 	function fonts() {
 		const base = ["monospace", "serif", "sans-serif"],
 			s = document.createElement("span");
