@@ -1,11 +1,10 @@
 (function () {
 	const $ = (s) => document.querySelector(s);
 	const FONTS = ["Arial", "Verdana", "Times New Roman", "Courier New", "Georgia", "Trebuchet MS", "Impact", "Comic Sans MS", "Tahoma", "Calibri", "Cambria", "Consolas", "Segoe UI", "Helvetica", "Helvetica Neue", "Menlo", "Monaco", "Roboto", "Ubuntu", "Noto Sans", "Lucida Grande", "Palatino", "Garamond", "Futura", "Optima", "Gill Sans", "Candara", "Century Gothic", "SF Pro Text", "Apple Color Emoji"];
+	const t = I18N.t;
 	let last = null,
-		stable = {},
 		lastGroups = [],
-		netRows = [],
-		netBusy = false;
+		hex = "";
 	async function sha(str) {
 		try {
 			const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
@@ -22,21 +21,6 @@
 			}
 			return out.join("");
 		}
-	}
-	function n_gp() {
-		try {
-			return String([...navigator.getGamepads()].filter(Boolean).length) + " bağlı";
-		} catch (e) {
-			return "bilinmiyor";
-		}
-	}
-	const msf = (x) => (isFinite(x) && x >= 0 ? x.toFixed(0) + " ms" : "—");
-	function navT() {
-		return performance.getEntriesByType("navigation")[0] || {};
-	}
-	function navTimes() {
-		const N = navT();
-		return "DNS " + msf(N.domainLookupEnd - N.domainLookupStart) + ", TCP " + msf(N.connectEnd - N.connectStart) + ", TLS " + (N.secureConnectionStart > 0 ? msf(N.connectEnd - N.secureConnectionStart) : "—") + ", TTFB " + msf(N.responseStart - N.requestStart);
 	}
 	function rtc() {
 		return new Promise((res) => {
@@ -111,7 +95,7 @@
 			x.stroke();
 			return c.toDataURL();
 		} catch (e) {
-			return "yok";
+			return "";
 		}
 	}
 	function webgl() {
@@ -144,23 +128,29 @@
 			for (let i = 4500; i < 5000; i++) s += Math.abs(d[i]);
 			return s.toString();
 		} catch (e) {
-			return "yok";
+			return "";
 		}
 	}
-	function storage() {
-		const t = (k) => {
-			try {
-				window[k].setItem("_t", "1");
-				window[k].removeItem("_t");
-				return true;
-			} catch (e) {
-				return false;
-			}
-		};
-		return "localStorage " + (t("localStorage") ? "var" : "yok") + ", sessionStorage " + (t("sessionStorage") ? "var" : "yok") + ", IndexedDB " + (window.indexedDB ? "var" : "yok");
-	}
+	const storage = () =>
+		["localStorage", "sessionStorage"]
+			.filter((k) => {
+				try {
+					window[k].setItem("_t", "1");
+					window[k].removeItem("_t");
+					return true;
+				} catch (e) {
+					return false;
+				}
+			})
+			.concat(window.indexedDB ? ["IndexedDB"] : []);
 	const mq = (q) => matchMedia(q).matches;
-	const tryP = async (f, d = "bilinmiyor") => {
+	// Typed values: plain string = text, YN = yes/no badge, CH = chips ([name, true|false|text] pairs allowed).
+	const YN = (v) => ({ b: !!v });
+	const CH = (a) => ({ c: a });
+	const U = (v, f = (x) => x) => (v == null || v === "" ? "Unknown" : f(v));
+	const ms = (x) => (isFinite(x) && x >= 0 ? x.toFixed(0) + " ms" : "—");
+	const navT = () => performance.getEntriesByType("navigation")[0] || {};
+	const tryP = async (f, d = null) => {
 		try {
 			const v = await Promise.race([f(), new Promise((_, r) => setTimeout(r, 1800))]);
 			return v ?? d;
@@ -168,20 +158,20 @@
 			return d;
 		}
 	};
+
+	// Every value is language-independent: translation happens only at render time.
 	async function extras() {
 		const n = navigator,
-			X = {},
-			sec = (v) => (v === Infinity ? "—" : Math.round(v) + " sn");
+			X = {};
 		X.bat = await tryP(async () => {
-			if (!n.getBattery) return "API yok (Firefox ve Safari kapalı tutuyor)";
 			const b = await n.getBattery();
-			return { l: Math.round(b.level * 100) + "%", c: b.charging ? "evet" : "hayır", ct: sec(b.chargingTime), dt: sec(b.dischargingTime) };
+			return { l: Math.round(b.level * 100), c: b.charging, ct: b.chargingTime, dt: b.dischargingTime };
 		});
-		X.he = await tryP(async () => (n.userAgentData ? await n.userAgentData.getHighEntropyValues(["architecture", "bitness", "model", "platformVersion", "uaFullVersion", "fullVersionList", "wow64"]) : null));
+		X.he = await tryP(() => n.userAgentData.getHighEntropyValues(["architecture", "bitness", "model", "platformVersion", "uaFullVersion", "fullVersionList"]));
 		X.dev = await tryP(async () => {
 			const c = { audioinput: 0, videoinput: 0, audiooutput: 0 };
 			(await n.mediaDevices.enumerateDevices()).forEach((d) => c[d.kind]++);
-			return "mikrofon " + c.audioinput + ", kamera " + c.videoinput + ", hoparlör " + c.audiooutput;
+			return c;
 		});
 		X.vox = await tryP(
 			() =>
@@ -189,37 +179,26 @@
 					const s = speechSynthesis,
 						f = () => {
 							const v = s.getVoices();
-							if (v.length)
-								res(
-									v.length +
-										" ses: " +
-										v
-											.slice(0, 4)
-											.map((x) => x.name)
-											.join(", ") +
-										(v.length > 4 ? "…" : ""),
-								);
+							if (v.length) res(v.map((x) => x.name));
 						};
 					f();
 					s.onvoiceschanged = f;
-					setTimeout(() => res("0 ses"), 1200);
+					setTimeout(() => res([]), 1200);
 				}),
 		);
 		X.perm = await tryP(async () => {
-			const o = [];
+			const o = [],
+				S = { granted: "Granted", denied: "Denied", prompt: "Ask" };
 			for (const nm of ["geolocation", "notifications", "camera", "microphone", "clipboard-read", "midi", "push"]) {
 				try {
-					o.push(nm + ": " + (await n.permissions.query({ name: nm })).state);
+					o.push([nm, S[(await n.permissions.query({ name: nm })).state]]);
 				} catch (e) {}
 			}
-			return o.join(", ") || null;
+			return o.length ? o : null;
 		});
 		X.gpu = await tryP(async () => {
-			if (!n.gpu) return "WebGPU yok";
-			const a = await n.gpu.requestAdapter();
-			if (!a) return "adaptör yok";
-			const i = a.info || {};
-			return [i.vendor, i.architecture, i.device, i.description].filter(Boolean).join(" / ") || "bilgi gizli";
+			const i = (await n.gpu.requestAdapter()).info || {};
+			return [i.vendor, i.architecture, i.device, i.description].filter(Boolean).join(" / ") || null;
 		});
 		X.est = await tryP(async () => {
 			const e = await n.storage.estimate();
@@ -227,46 +206,47 @@
 		});
 		X.kb = await tryP(async () => {
 			const m = await n.keyboard.getLayoutMap();
-			return "Q→" + m.get("KeyQ") + ", Y→" + m.get("KeyY") + ", Z→" + m.get("KeyZ") + ", ;→" + m.get("Semicolon");
+			return [
+				["Q", m.get("KeyQ")],
+				["Y", m.get("KeyY")],
+				["Z", m.get("KeyZ")],
+				[";", m.get("Semicolon")],
+			];
 		});
-		X.wa = await tryP(async () => ((await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()) ? "var (Windows Hello, Touch ID vb.)" : "yok"));
+		X.wa = await tryP(() => PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable());
 		X.math = (await sha([Math.tan(-1e300), Math.sinh(1), Math.expm1(1), Math.cosh(10), Math.atanh(0.5)].join("|"))).slice(0, 16);
 		const v = document.createElement("video"),
 			a = document.createElement("audio");
-		X.codec =
-			[
-				["H.264", 'video/mp4; codecs="avc1.42E01E"'],
-				["HEVC", 'video/mp4; codecs="hvc1.1.6.L93.B0"'],
-				["VP9", 'video/webm; codecs="vp9"'],
-				["AV1", 'video/mp4; codecs="av01.0.05M.08"'],
-				["AAC", 'audio/mp4; codecs="mp4a.40.2"'],
-				["Opus", 'audio/webm; codecs="opus"'],
-				["FLAC", "audio/flac"],
-				["MP3", "audio/mpeg"],
-			]
-				.filter(([, t]) => (t[0] == "v" ? v : a).canPlayType(t))
-				.map((x) => x[0])
-				.join(", ") || "yok";
+		X.codec = [
+			["H.264", 'video/mp4; codecs="avc1.42E01E"'],
+			["HEVC", 'video/mp4; codecs="hvc1.1.6.L93.B0"'],
+			["VP9", 'video/webm; codecs="vp9"'],
+			["AV1", 'video/mp4; codecs="av01.0.05M.08"'],
+			["AAC", 'audio/mp4; codecs="mp4a.40.2"'],
+			["Opus", 'audio/webm; codecs="opus"'],
+			["FLAC", "audio/flac"],
+			["MP3", "audio/mpeg"],
+		]
+			.filter(([, t]) => (t[0] == "v" ? v : a).canPlayType(t))
+			.map((x) => x[0]);
 		X.feat = [
 			["Bluetooth", !!n.bluetooth],
 			["USB", !!n.usb],
 			["Serial", !!n.serial],
 			["HID", !!n.hid],
-			["Paylaş", !!n.share],
+			["Share", !!n.share],
 			["WakeLock", !!n.wakeLock],
-			["Titreşim", !!n.vibrate],
+			["Vibration", !!n.vibrate],
 			["ServiceWorker", !!n.serviceWorker],
 			["WebAssembly", typeof WebAssembly == "object"],
 			["SharedArrayBuffer", typeof SharedArrayBuffer == "function"],
 			["OffscreenCanvas", typeof OffscreenCanvas == "function"],
 			["WebRTC", !!window.RTCPeerConnection],
 			["MediaRecorder", !!window.MediaRecorder],
-			["Bildirim", !!window.Notification],
+			["Notifications", !!window.Notification],
 			["WebGL2", !!document.createElement("canvas").getContext("webgl2")],
 			["WebXR", !!n.xr],
 		];
-		const ro = Intl.DateTimeFormat().resolvedOptions();
-		X.intl = ro.locale + ", takvim " + ro.calendar + ", rakam " + ro.numberingSystem + ", " + new Intl.NumberFormat().format(1234567.891) + ", " + new Date(2020, 11, 31, 23, 59).toLocaleString();
 		let m = 1e9,
 			p = performance.now();
 		for (let i = 0; i < 3000; i++) {
@@ -276,173 +256,235 @@
 				p = q;
 			}
 		}
-		X.tim = m < 1e9 ? (m * 1000).toFixed(0) + " µs" : "bilinmiyor";
+		X.tim = m < 1e9 ? (m * 1000).toFixed(0) + " µs" : null;
 		return X;
 	}
+
+	// Each group: [group, [[label, value, volatile?], ...]]. Group and label names are English keys.
+	// Rows flagged 1 change from moment to moment and are left out of the fingerprint hash.
 	async function collect() {
 		const n = navigator,
-			c = n.connection || {};
-		const gl = webgl(),
-			X = await extras();
-		const B = typeof X.bat == "object" ? X.bat : { l: X.bat, c: "—", ct: "—", dt: "—" },
-			H = typeof X.he == "object" ? X.he : {},
-			E = typeof X.est == "object" ? X.est : { q: X.est, u: "—" };
+			c = n.connection || {},
+			N = navT(),
+			X = await extras(),
+			gl = webgl(),
+			B = X.bat,
+			h = X.he || {},
+			E = X.est,
+			D = X.dev;
+		const ro = Intl.DateTimeFormat().resolvedOptions(),
+			off = -new Date().getTimezoneOffset() / 60;
 		const canvas = canvasData(),
 			audio = await audioData(),
 			fl = fonts();
 		const [canvasH, audioH] = await Promise.all([sha(canvas), sha(audio)]);
-		const groups = [
+		const min = (s) => (s === Infinity ? "—" : Math.round(s / 60) + " min");
+		const bat = (f) => (B ? f(B) : "Unsupported");
+		const mic = (k) => U(D, (d) => String(d[k]));
+		return [
 			[
-				"Tarayıcı",
+				"Browser",
 				[
 					["User-Agent", n.userAgent],
-					["Platform", n.userAgentData?.platform || n.platform],
-					["Diller", (n.languages || [n.language]).join(", ")],
-					["Saat dilimi", Intl.DateTimeFormat().resolvedOptions().timeZone],
-					["UTC farkı", String(-new Date().getTimezoneOffset() / 60), 1],
-					["Çerezler", n.cookieEnabled ? "Açık" : "Kapalı"],
-					["Do Not Track", { 1: "Açık", 0: "Kapalı" }[n.doNotTrack ?? window.doNotTrack] ?? "belirtilmemiş"],
-					["Depolama", storage()],
-					["PDF görüntüleyici", n.pdfViewerEnabled === undefined ? "bilinmiyor" : String(n.pdfViewerEnabled)],
+					["Platform", U(n.userAgentData?.platform || n.platform)],
+					["Languages", CH(n.languages || [n.language])],
+					["Time zone", ro.timeZone],
+					["UTC offset", "UTC" + (off >= 0 ? "+" : "") + off, 1],
+					["Cookies enabled", YN(n.cookieEnabled)],
+					["Do Not Track", U(["1", "0", "yes", "no"].includes(String(n.doNotTrack ?? window.doNotTrack)) ? String(n.doNotTrack ?? window.doNotTrack) : null, (v) => YN(v === "1" || v === "yes"))],
+					["Web storage", CH(storage())],
+					["PDF viewer", U(n.pdfViewerEnabled, YN)],
 				],
 			],
 			[
-				"Ekran",
+				"Screen",
 				[
-					["Çözünürlük", screen.width + " × " + screen.height],
-					["Kullanılabilir alan", screen.availWidth + " × " + screen.availHeight],
-					["Pencere", innerWidth + " × " + innerHeight, 1],
-					["Yön", screen.orientation ? screen.orientation.type + " " + screen.orientation.angle + "°" : "bilinmiyor", 1],
-					["İşaretçi", mq("(pointer: fine)") ? "hassas (fare)" : mq("(pointer: coarse)") ? "kaba (dokunmatik)" : "yok"],
-					["Üzerine gelme (hover)", mq("(any-hover: hover)") ? "var" : "yok"],
-					["Piksel oranı", String(devicePixelRatio), 1],
-					["Renk derinliği", screen.colorDepth + " bit"],
-					["Renk teması", mq("(prefers-color-scheme: dark)") ? "koyu" : "açık", 1],
-					["Hareketi azalt", mq("(prefers-reduced-motion: reduce)") ? "evet" : "hayır"],
-					["HDR / geniş gamut", (mq("(dynamic-range: high)") ? "HDR" : "SDR") + " / " + (mq("(color-gamut: p3)") ? "P3" : "sRGB")],
+					["Resolution", screen.width + " × " + screen.height],
+					["Available area", screen.availWidth + " × " + screen.availHeight],
+					["Window size", innerWidth + " × " + innerHeight, 1],
+					["Orientation", U(screen.orientation, (o) => o.type + " " + o.angle + "°"), 1],
+					["Pointer", mq("(pointer: fine)") ? "Mouse" : mq("(pointer: coarse)") ? "Touch" : "None"],
+					["Hover support", YN(mq("(any-hover: hover)"))],
+					["Pixel ratio", String(devicePixelRatio), 1],
+					["Color depth", screen.colorDepth + " bit"],
+					["Color scheme", mq("(prefers-color-scheme: dark)") ? "Dark" : "Light", 1],
+					["Reduced motion", YN(mq("(prefers-reduced-motion: reduce)"))],
+					["HDR", YN(mq("(dynamic-range: high)"))],
+					["Color gamut", mq("(color-gamut: p3)") ? "P3" : "sRGB"],
 				],
 			],
 			[
-				"Donanım",
+				"Hardware",
 				[
-					["Mantıksal çekirdek", String(n.hardwareConcurrency ?? "bilinmiyor")],
-					["Bellek (yaklaşık)", n.deviceMemory ? n.deviceMemory + " GB" : "bilinmiyor"],
-					["Dokunmatik nokta", String(n.maxTouchPoints || 0)],
-					["Ağ türü", c.effectiveType ? c.effectiveType + (c.saveData ? " (veri tasarrufu)" : "") : "bilinmiyor", 1],
+					["Logical cores", U(n.hardwareConcurrency, String)],
+					["Memory", U(n.deviceMemory, (v) => v + " GB")],
+					["Touch points", String(n.maxTouchPoints || 0)],
 				],
 			],
 			[
-				"Bağlantı",
+				"Connection",
 				[
-					["Protokol", location.protocol + " / " + (navT().nextHopProtocol || "bilinmiyor"), 1],
-					["Ana makine", location.host || "yerel dosya", 1],
-					["Güvenli bağlam", String(isSecureContext) + ", crossOriginIsolated " + String(self.crossOriginIsolated), 1],
-					["Bağlantı türü", (navigator.connection || {}).type || "bilinmiyor", 1],
-					["Etkin ağ türü", (navigator.connection || {}).effectiveType || "bilinmiyor", 1],
-					["Azami indirme", (navigator.connection || {}).downlinkMax ? navigator.connection.downlinkMax + " Mb/sn" : "bilinmiyor", 1],
-					["Veri tasarrufu", String((navigator.connection || {}).saveData ?? "bilinmiyor"), 1],
-					["Bağlantı süreleri", navTimes(), 1],
-					["Sayfa boyutu", navT().transferSize ? (navT().transferSize / 1024).toFixed(1) + " KB" : "bilinmiyor", 1],
+					["Protocol", U(N.nextHopProtocol), 1],
+					["Host", location.host || "Local file", 1],
+					["Secure context", YN(isSecureContext), 1],
+					["Cross-origin isolated", YN(self.crossOriginIsolated), 1],
+					["Connection type", U(c.type), 1],
+					["Effective type", U(c.effectiveType), 1],
+					["Max downlink", U(c.downlinkMax, (v) => v + " Mb/s"), 1],
+					["Downlink", U(c.downlink, (v) => v + " Mb/s"), 1],
+					["Round-trip time", U(c.rtt, (v) => v + " ms"), 1],
+					["Data saver", U(c.saveData, YN), 1],
+					["Online", YN(n.onLine), 1],
+					[
+						"Timings",
+						CH([
+							["DNS", ms(N.domainLookupEnd - N.domainLookupStart)],
+							["TCP", ms(N.connectEnd - N.connectStart)],
+							["TLS", N.secureConnectionStart > 0 ? ms(N.connectEnd - N.secureConnectionStart) : "—"],
+							["TTFB", ms(N.responseStart - N.requestStart)],
+						]),
+						1,
+					],
+					["Page size", U(N.transferSize, (v) => (v / 1024).toFixed(1) + " KB"), 1],
 				],
 			],
 			[
-				"Pil ve güç",
+				"Battery",
 				[
-					["Şarj seviyesi", B.l, 1],
-					["Şarj oluyor", B.c, 1],
-					["Dolmasına kalan", B.ct, 1],
-					["Boşalmasına kalan", B.dt, 1],
+					["Level", bat((b) => b.l + "%"), 1],
+					["Charging", bat((b) => YN(b.c)), 1],
+					["Time to full", bat((b) => min(b.ct)), 1],
+					["Time to empty", bat((b) => min(b.dt)), 1],
 				],
 			],
 			[
-				"Ayrıntılı tarayıcı kimliği (UA-CH)",
+				"Detailed browser identity",
 				[
-					["Mimari / bit", (H.architecture || "—") + " / " + (H.bitness || "—")],
-					["Cihaz modeli", H.model || "—"],
-					["Platform sürümü", H.platformVersion || "—"],
-					["Tam sürüm", H.uaFullVersion || "—"],
-					["Marka listesi", (H.fullVersionList || []).map((b) => b.brand + " " + b.version).join(", ") || "—"],
+					["Architecture", U(h.architecture, (a) => a + (h.bitness ? " (" + h.bitness + "-bit)" : ""))],
+					["Device model", U(h.model)],
+					["Platform version", U(h.platformVersion)],
+					["Full version", U(h.uaFullVersion)],
+					["Brands", U(h.fullVersionList, (l) => CH(l.map((b) => b.brand + " " + b.version)))],
 				],
 			],
 			[
-				"Cihazlar ve ağ",
+				"Devices & storage",
 				[
-					["Medya aygıtları", X.dev, 1],
-					["Gamepad", n_gp(), 1],
-					["İndirme hızı / gecikme", navigator.connection ? navigator.connection.downlink + " Mb/sn / " + navigator.connection.rtt + " ms" : "bilinmiyor", 1],
-					["Çevrimiçi", navigator.onLine ? "evet" : "hayır", 1],
-					["Disk kotası", E.q, 1],
-					["Kullanılan depolama", E.u, 1],
-					["JS yığın sınırı", performance.memory ? Math.round(performance.memory.jsHeapSizeLimit / 1048576) + " MB" : "yok"],
-					["Klavye düzeni", X.kb],
-					["Biyometrik kimlik (WebAuthn)", X.wa],
+					["Microphones", mic("audioinput"), 1],
+					["Cameras", mic("videoinput"), 1],
+					["Speakers", mic("audiooutput"), 1],
+					["Gamepads", n.getGamepads ? String([...n.getGamepads()].filter(Boolean).length) : "Unsupported", 1],
+					["Storage quota", U(E, (e) => e.q), 1],
+					["Storage used", U(E, (e) => e.u), 1],
+					["JS heap limit", performance.memory ? Math.round(performance.memory.jsHeapSizeLimit / 1048576) + " MB" : "Unsupported"],
+					["Keyboard layout", U(X.kb, CH)],
+					["Platform authenticator", U(X.wa, YN)],
 				],
 			],
 			[
-				"İzinler ve yetenekler",
+				"Capabilities",
 				[
-					["İzin durumları", X.perm, 1],
-					["Eklentiler", [...navigator.plugins].map((p) => p.name).join(", ") || "yok"],
-					["Destek listesi", X.feat.map(([k, v]) => (v ? "✓ " : "✗ ") + k).join("  ")],
-					["Codec desteği", X.codec],
-					["WebGPU", X.gpu],
-					["Konuşma sentezi sesleri", X.vox, 1],
+					["Permissions", U(X.perm, CH), 1],
+					["Plugins", CH([...n.plugins].map((p) => p.name))],
+					["Web APIs", CH(X.feat)],
+					["Codecs", CH(X.codec)],
+					["Speech voices", U(X.vox, (v) => CH(v.slice(0, 6).concat(v.length > 6 ? ["+" + (v.length - 6)] : []))), 1],
 				],
 			],
 			[
-				"Yerel ayarlar ve zaman",
+				"Locale & time",
 				[
-					["Intl örneği", X.intl],
-					["Zamanlayıcı hassasiyeti", X.tim, 1],
-					["Math özeti", X.math],
-					["Sayfa", (document.referrer || "yönlendiren yok") + ", geçmiş " + history.length + ", " + document.characterSet, 1],
+					["Locale", ro.locale],
+					["Calendar", ro.calendar],
+					["Numbering system", ro.numberingSystem],
+					["Number format", new Intl.NumberFormat().format(1234567.891)],
+					["Date format", new Date(2020, 11, 31, 23, 59).toLocaleString()],
+					["Timer resolution", U(X.tim), 1],
+					["Math hash", X.math],
+					["Referrer", document.referrer || "None", 1],
+					["History length", String(history.length), 1],
+					["Charset", document.characterSet],
 				],
 			],
 			[
-				"Otomasyon izleri",
+				"Automation signals",
 				[
-					["webdriver", String(navigator.webdriver)],
-					["Headless ipucu", /Headless/i.test(navigator.userAgent) ? "evet" : "hayır"],
-					["window.chrome", window.chrome ? "var" : "yok"],
+					["webdriver", YN(n.webdriver)],
+					["Headless hint", YN(/Headless/i.test(n.userAgent))],
+					["Chrome object", YN(window.chrome)],
 				],
 			],
 			[
-				"Grafik ve ses",
+				"Graphics & audio",
 				[
-					["WebGL üretici", gl ? gl.vendor : "desteklenmiyor"],
-					["WebGL ekran kartı", gl ? gl.renderer : "desteklenmiyor"],
-					["WebGL azami doku", gl ? String(gl.maxTexture) : "—"],
-					["Canvas özeti", canvasH.slice(0, 24)],
-					["Ses özeti", audio === "yok" ? "yok" : audioH.slice(0, 24)],
+					["GPU vendor", gl ? gl.vendor : "Unsupported"],
+					["GPU renderer", gl ? gl.renderer : "Unsupported"],
+					["Max texture size", gl ? String(gl.maxTexture) : "Unsupported"],
+					["WebGPU", U(X.gpu, (g) => g)],
+					["Canvas hash", canvas ? canvasH.slice(0, 24) : "Unsupported"],
+					["Audio hash", audio ? audioH.slice(0, 24) : "Unsupported"],
 				],
 			],
-			["Yazı tipleri", [["Bulunan (" + fl.length + "/" + FONTS.length + ")", fl.join(", ") || "hiçbiri"]]],
+			["Fonts", [["Installed fonts", CH(fl)]]],
 		];
-		return groups;
 	}
-	function render(groups) {
-		lastGroups = groups;
+
+	// ---- Rendering (the only place where text is translated) ----
+	const NA = new Set(["Unknown", "Unsupported", "None", "Unspecified", "—"]);
+	const el = (tag, cls, txt) => {
+		const e = document.createElement(tag);
+		if (cls) e.className = cls;
+		if (txt != null) e.textContent = txt;
+		return e;
+	};
+	function cell(v) {
+		const d = el("dd");
+		if (v && v.b !== undefined) d.append(el("span", "badge " + (v.b ? "yes" : "no"), t(v.b ? "Yes" : "No")));
+		else if (v && v.c) {
+			if (!v.c.length) {
+				d.className = "na";
+				d.textContent = t("None");
+			} else {
+				d.className = "chips";
+				v.c.forEach((x) => {
+					if (!Array.isArray(x)) return d.append(el("span", "chip", t(String(x))));
+					const [k, val] = x;
+					d.append(typeof val == "boolean" ? el("span", "chip " + (val ? "on" : "off"), (val ? "✓ " : "✗ ") + k) : el("span", "chip", k + ": " + t(String(val))));
+				});
+			}
+		} else {
+			if (NA.has(v)) d.className = "na";
+			d.textContent = t(String(v));
+		}
+		return d;
+	}
+	function render() {
 		const out = $("#out");
 		out.textContent = "";
-		groups.forEach(([title, rows]) => {
-			const s = document.createElement("section"),
-				h = document.createElement("h2"),
-				dl = document.createElement("dl");
-			h.textContent = title;
+		lastGroups.forEach(([title, rows]) => {
+			const s = el("section"),
+				dl = el("dl");
 			rows.forEach(([k, v]) => {
-				const r = document.createElement("div"),
-					dt = document.createElement("dt"),
-					dd = document.createElement("dd");
-				r.className = "row";
-				dt.textContent = k;
-				dd.textContent = v;
-				r.append(dt, dd);
+				const r = el("div", "row");
+				r.append(el("dt", "", t(k)), cell(v));
 				dl.append(r);
 			});
-			s.append(h, dl);
+			s.append(el("h2", "", t(title)), dl);
 			out.append(s);
 		});
 	}
+	const TITLE = "How well does your browser know you?",
+		LEAD = "These values are collected without cookies, only from what your browser volunteers. Combined, they form a profile unique to you.";
+	function applyUI() {
+		document.title = $("#title").textContent = t(TITLE);
+		$("meta[name=description]").content = $("#lead").textContent = t(LEAD);
+		$("#hashTitle").textContent = t("Stable fingerprint");
+		$("#again").textContent = t("Recalculate");
+		$("#copy").textContent = t("Copy JSON");
+		$("#hash").textContent = hex || t("Computing…");
+		$("#rings").setAttribute("aria-label", t("Rings generated from the fingerprint"));
+	}
+
 	function rings(hex) {
 		const b = hex.match(/../g).map((h) => parseInt(h, 16));
 		let out = "";
@@ -476,28 +518,28 @@
 		);
 		return { all, flat };
 	}
+
 	async function run() {
-		$("#hash").textContent = "Hesaplanıyor…";
-		const groups = await collect();
-		render(groups);
-		const { all, flat } = split(groups);
+		hex = "";
+		applyUI();
+		lastGroups = await collect();
+		render();
+		const { all, flat } = split(lastGroups);
 		last = all;
-		stable = flat;
-		const hex = await sha(JSON.stringify(flat));
+		hex = await sha(JSON.stringify(flat));
 		$("#hash").textContent = hex;
-		const nA = Object.keys(all).length,
-			nS = Object.keys(flat).length;
 		rings(hex);
 	}
 	$("#again").onclick = run;
 	$("#copy").onclick = async () => {
 		try {
 			await navigator.clipboard.writeText(JSON.stringify(last, null, 2));
-			$("#copy").textContent = "Kopyalandı";
+			$("#copy").textContent = t("Copied");
 		} catch (e) {
-			$("#copy").textContent = "Kopyalanamadı";
+			$("#copy").textContent = t("Copy failed");
 		}
-		setTimeout(() => ($("#copy").textContent = "JSON’u kopyala"), 1500);
+		setTimeout(() => ($("#copy").textContent = t("Copy JSON")), 1500);
 	};
+	applyUI();
 	run();
 })();

@@ -25,10 +25,10 @@
 	<body>
 		<div class="wrap">
 			<header class="hero">
-				<h1>Tarayıcın Seni Ne Kadar Tanıyor?</h1>
-				<p class="lead">Aşağıdaki değerler çerez olmadan, yalnızca tarayıcının kendiliğinden verdiği bilgilerden toplanır. Hepsi birleşince sana özgü bir izdüşümü oluşur.</p>
+				<h1 id="title">Tarayıcın Seni Ne Kadar Tanıyor?</h1>
+				<p class="lead" id="lead">Aşağıdaki değerler çerez olmadan, yalnızca tarayıcının kendiliğinden verdiği bilgilerden toplanır. Hepsi birleşince sana özgü bir izdüşümü oluşur.</p>
 				<svg id="rings" viewBox="0 0 220 220" role="img" aria-label="Parmak izinden üretilen halkalar"></svg>
-				<h2 style="margin-top: 4px">Sabit parmak izi</h2>
+				<h2 id="hashTitle" style="margin-top: 4px">Sabit parmak izi</h2>
 				<p class="hash" id="hash">Hesaplanıyor…</p>
 				<p class="lead" id="stat" style="font-size: 14px; margin-bottom: 14px"></p>
 				<div class="btns">
@@ -38,6 +38,7 @@
 			</header>
 			<main id="out" aria-live="polite"></main>
 		</div>
+		<script src="assets/i18n.js"></script>
 		<script src="assets/script.js"></script>
 	</body>
 </html>
