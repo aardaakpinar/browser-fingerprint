@@ -283,59 +283,64 @@
 		const mic = (k) => U(D, (d) => String(d[k]));
 		return [
 			[
+				"browser",
 				"Browser",
 				[
-					["User-Agent", n.userAgent],
-					["Platform", U(n.userAgentData?.platform || n.platform)],
-					["Languages", CH(n.languages || [n.language])],
-					["Time zone", ro.timeZone],
-					["UTC offset", "UTC" + (off >= 0 ? "+" : "") + off, 1],
-					["Cookies enabled", YN(n.cookieEnabled)],
-					["Do Not Track", U(["1", "0", "yes", "no"].includes(String(n.doNotTrack ?? window.doNotTrack)) ? String(n.doNotTrack ?? window.doNotTrack) : null, (v) => YN(v === "1" || v === "yes"))],
-					["Web storage", CH(storage())],
-					["PDF viewer", U(n.pdfViewerEnabled, YN)],
+					["ua", "User-Agent", n.userAgent],
+					["platform", "Platform", U(n.userAgentData?.platform || n.platform)],
+					["langs", "Languages", CH(n.languages || [n.language])],
+					["tz", "Time zone", ro.timeZone],
+					["utc", "UTC offset", "UTC" + (off >= 0 ? "+" : "") + off, 1],
+					["cookies", "Cookies enabled", YN(n.cookieEnabled)],
+					["dnt", "Do Not Track", U(["1", "0", "yes", "no"].includes(String(n.doNotTrack ?? window.doNotTrack)) ? String(n.doNotTrack ?? window.doNotTrack) : null, (v) => YN(v === "1" || v === "yes"))],
+					["storage", "Web storage", CH(storage())],
+					["pdf", "PDF viewer", U(n.pdfViewerEnabled, YN)],
 				],
 			],
 			[
+				"screen",
 				"Screen",
 				[
-					["Resolution", screen.width + " × " + screen.height],
-					["Available area", screen.availWidth + " × " + screen.availHeight],
-					["Window size", innerWidth + " × " + innerHeight, 1],
-					["Orientation", U(screen.orientation, (o) => o.type + " " + o.angle + "°"), 1],
-					["Pointer", mq("(pointer: fine)") ? "Mouse" : mq("(pointer: coarse)") ? "Touch" : "None"],
-					["Hover support", YN(mq("(any-hover: hover)"))],
-					["Pixel ratio", String(devicePixelRatio), 1],
-					["Color depth", screen.colorDepth + " bit"],
-					["Color scheme", mq("(prefers-color-scheme: dark)") ? "Dark" : "Light", 1],
-					["Reduced motion", YN(mq("(prefers-reduced-motion: reduce)"))],
-					["HDR", YN(mq("(dynamic-range: high)"))],
-					["Color gamut", mq("(color-gamut: p3)") ? "P3" : "sRGB"],
+					["res", "Resolution", screen.width + " × " + screen.height],
+					["avail", "Available area", screen.availWidth + " × " + screen.availHeight],
+					["win", "Window size", innerWidth + " × " + innerHeight, 1],
+					["orient", "Orientation", U(screen.orientation, (o) => o.type + " " + o.angle + "°"), 1],
+					["pointer", "Pointer", mq("(pointer: fine)") ? "Mouse" : mq("(pointer: coarse)") ? "Touch" : "None"],
+					["hover", "Hover support", YN(mq("(any-hover: hover)"))],
+					["dpr", "Pixel ratio", String(devicePixelRatio), 1],
+					["depth", "Color depth", screen.colorDepth + " bit"],
+					["scheme", "Color scheme", mq("(prefers-color-scheme: dark)") ? "Dark" : "Light", 1],
+					["motion", "Reduced motion", YN(mq("(prefers-reduced-motion: reduce)"))],
+					["hdr", "HDR", YN(mq("(dynamic-range: high)"))],
+					["gamut", "Color gamut", mq("(color-gamut: p3)") ? "P3" : "sRGB"],
 				],
 			],
 			[
+				"hardware",
 				"Hardware",
 				[
-					["Logical cores", U(n.hardwareConcurrency, String)],
-					["Memory", U(n.deviceMemory, (v) => v + " GB")],
-					["Touch points", String(n.maxTouchPoints || 0)],
+					["cores", "Logical cores", U(n.hardwareConcurrency, String)],
+					["mem", "Memory", U(n.deviceMemory, (v) => v + " GB")],
+					["touch", "Touch points", String(n.maxTouchPoints || 0)],
 				],
 			],
 			[
+				"connection",
 				"Connection",
 				[
-					["Protocol", U(N.nextHopProtocol), 1],
-					["Host", location.host || "Local file", 1],
-					["Secure context", YN(isSecureContext), 1],
-					["Cross-origin isolated", YN(self.crossOriginIsolated), 1],
-					["Connection type", U(c.type), 1],
-					["Effective type", U(c.effectiveType), 1],
-					["Max downlink", U(c.downlinkMax, (v) => v + " Mb/s"), 1],
-					["Downlink", U(c.downlink, (v) => v + " Mb/s"), 1],
-					["Round-trip time", U(c.rtt, (v) => v + " ms"), 1],
-					["Data saver", U(c.saveData, YN), 1],
-					["Online", YN(n.onLine), 1],
+					["proto", "Protocol", U(N.nextHopProtocol), 1],
+					["host", "Host", location.host || "Local file", 1],
+					["secure", "Secure context", YN(isSecureContext), 1],
+					["coi", "Cross-origin isolated", YN(self.crossOriginIsolated), 1],
+					["ctype", "Connection type", U(c.type), 1],
+					["etype", "Effective type", U(c.effectiveType), 1],
+					["dlmax", "Max downlink", U(c.downlinkMax, (v) => v + " Mb/s"), 1],
+					["dl", "Downlink", U(c.downlink, (v) => v + " Mb/s"), 1],
+					["rtt", "Round-trip time", U(c.rtt, (v) => v + " ms"), 1],
+					["saver", "Data saver", U(c.saveData, YN), 1],
+					["online", "Online", YN(n.onLine), 1],
 					[
+						"timings",
 						"Timings",
 						CH([
 							["DNS", ms(N.domainLookupEnd - N.domainLookupStart)],
@@ -345,87 +350,94 @@
 						]),
 						1,
 					],
-					["Page size", U(N.transferSize, (v) => (v / 1024).toFixed(1) + " KB"), 1],
+					["psize", "Page size", U(N.transferSize, (v) => (v / 1024).toFixed(1) + " KB"), 1],
 				],
 			],
 			[
+				"battery",
 				"Battery",
 				[
-					["Level", bat((b) => b.l + "%"), 1],
-					["Charging", bat((b) => YN(b.c)), 1],
-					["Time to full", bat((b) => min(b.ct)), 1],
-					["Time to empty", bat((b) => min(b.dt)), 1],
+					["level", "Level", bat((b) => b.l + "%"), 1],
+					["charging", "Charging", bat((b) => YN(b.c)), 1],
+					["tfull", "Time to full", bat((b) => min(b.ct)), 1],
+					["tempty", "Time to empty", bat((b) => min(b.dt)), 1],
 				],
 			],
 			[
+				"uach",
 				"Detailed browser identity",
 				[
-					["Architecture", U(h.architecture, (a) => a + (h.bitness ? " (" + h.bitness + "-bit)" : ""))],
-					["Device model", U(h.model)],
-					["Platform version", U(h.platformVersion)],
-					["Full version", U(h.uaFullVersion)],
-					["Brands", U(h.fullVersionList, (l) => CH(l.map((b) => b.brand + " " + b.version)))],
+					["arch", "Architecture", U(h.architecture, (a) => a + (h.bitness ? " (" + h.bitness + "-bit)" : ""))],
+					["model", "Device model", U(h.model)],
+					["pver", "Platform version", U(h.platformVersion)],
+					["fver", "Full version", U(h.uaFullVersion)],
+					["brands", "Brands", U(h.fullVersionList, (l) => CH(l.map((b) => b.brand + " " + b.version)))],
 				],
 			],
 			[
+				"devices",
 				"Devices & storage",
 				[
-					["Microphones", mic("audioinput"), 1],
-					["Cameras", mic("videoinput"), 1],
-					["Speakers", mic("audiooutput"), 1],
-					["Gamepads", n.getGamepads ? String([...n.getGamepads()].filter(Boolean).length) : "Unsupported", 1],
-					["Storage quota", U(E, (e) => e.q), 1],
-					["Storage used", U(E, (e) => e.u), 1],
-					["JS heap limit", performance.memory ? Math.round(performance.memory.jsHeapSizeLimit / 1048576) + " MB" : "Unsupported"],
-					["Keyboard layout", U(X.kb, CH)],
-					["Platform authenticator", U(X.wa, YN)],
+					["mics", "Microphones", mic("audioinput"), 1],
+					["cams", "Cameras", mic("videoinput"), 1],
+					["spk", "Speakers", mic("audiooutput"), 1],
+					["pads", "Gamepads", n.getGamepads ? String([...n.getGamepads()].filter(Boolean).length) : "Unsupported", 1],
+					["quota", "Storage quota", U(E, (e) => e.q), 1],
+					["used", "Storage used", U(E, (e) => e.u), 1],
+					["heap", "JS heap limit", performance.memory ? Math.round(performance.memory.jsHeapSizeLimit / 1048576) + " MB" : "Unsupported"],
+					["kbd", "Keyboard layout", U(X.kb, CH)],
+					["webauthn", "Platform authenticator", U(X.wa, YN)],
 				],
 			],
 			[
+				"caps",
 				"Capabilities",
 				[
-					["Permissions", U(X.perm, CH), 1],
-					["Plugins", CH([...n.plugins].map((p) => p.name))],
-					["Web APIs", CH(X.feat)],
-					["Codecs", CH(X.codec)],
-					["Speech voices", U(X.vox, (v) => CH(v.slice(0, 6).concat(v.length > 6 ? ["+" + (v.length - 6)] : []))), 1],
+					["perms", "Permissions", U(X.perm, CH), 1],
+					["plugins", "Plugins", CH([...n.plugins].map((p) => p.name))],
+					["apis", "Web APIs", CH(X.feat)],
+					["codecs", "Codecs", CH(X.codec)],
+					["voices", "Speech voices", U(X.vox, (v) => CH(v.slice(0, 6).concat(v.length > 6 ? ["+" + (v.length - 6)] : []))), 1],
 				],
 			],
 			[
+				"locale",
 				"Locale & time",
 				[
-					["Locale", ro.locale],
-					["Calendar", ro.calendar],
-					["Numbering system", ro.numberingSystem],
-					["Number format", new Intl.NumberFormat().format(1234567.891)],
-					["Date format", new Date(2020, 11, 31, 23, 59).toLocaleString()],
-					["Timer resolution", U(X.tim), 1],
-					["Math hash", X.math],
-					["Referrer", document.referrer || "None", 1],
-					["History length", String(history.length), 1],
-					["Charset", document.characterSet],
+					["locale", "Locale", ro.locale],
+					["cal", "Calendar", ro.calendar],
+					["numsys", "Numbering system", ro.numberingSystem],
+					["numfmt", "Number format", new Intl.NumberFormat().format(1234567.891)],
+					["datefmt", "Date format", new Date(2020, 11, 31, 23, 59).toLocaleString()],
+					["timer", "Timer resolution", U(X.tim), 1],
+					["math", "Math hash", X.math],
+					["ref", "Referrer", document.referrer || "None", 1],
+					["hist", "History length", String(history.length), 1],
+					["charset", "Charset", document.characterSet],
 				],
 			],
 			[
+				"automation",
 				"Automation signals",
 				[
-					["webdriver", YN(n.webdriver)],
-					["Headless hint", YN(/Headless/i.test(n.userAgent))],
-					["Chrome object", YN(window.chrome)],
+					["webdriver", "webdriver", YN(n.webdriver)],
+					["headless", "Headless hint", YN(/Headless/i.test(n.userAgent))],
+					["chrome", "Chrome object", YN(window.chrome)],
 				],
 			],
 			[
+				"graphics",
 				"Graphics & audio",
 				[
-					["GPU vendor", gl ? gl.vendor : "Unsupported"],
-					["GPU renderer", gl ? gl.renderer : "Unsupported"],
-					["Max texture size", gl ? String(gl.maxTexture) : "Unsupported"],
-					["WebGPU", U(X.gpu, (g) => g)],
-					["Canvas hash", canvas ? canvasH.slice(0, 24) : "Unsupported"],
-					["Audio hash", audio ? audioH.slice(0, 24) : "Unsupported"],
+					["gpuv", "GPU vendor", gl ? gl.vendor : "Unsupported"],
+					["gpur", "GPU renderer", gl ? gl.renderer : "Unsupported"],
+					["maxtex", "Max texture size", gl ? String(gl.maxTexture) : "Unsupported"],
+					["webgpu", "WebGPU", U(X.gpu, (g) => g)],
+					["canvas", "Canvas hash", canvas ? canvasH.slice(0, 24) : "Unsupported"],
+					["audio", "Audio hash", audio ? audioH.slice(0, 24) : "Unsupported"],
 				],
 			],
-			["Fonts", [["Installed fonts", CH(fl)]]],
+			["fonts", "Fonts", [["fonts", "Installed fonts", CH(fl)]]],
 		];
 	}
 
@@ -461,10 +473,10 @@
 	function render() {
 		const out = $("#out");
 		out.textContent = "";
-		lastGroups.forEach(([title, rows]) => {
+		lastGroups.forEach(([, title, rows]) => {
 			const s = el("section"),
 				dl = el("dl");
-			rows.forEach(([k, v]) => {
+			rows.forEach(([, k, v]) => {
 				const r = el("div", "row");
 				r.append(el("dt", "", t(k)), cell(v));
 				dl.append(r);
@@ -506,18 +518,29 @@
 		}
 		$("#rings").innerHTML = out;
 	}
+	// Bump when the set of fingerprinted values or their format changes on purpose.
+	const FP_VERSION = 1;
+	// Keys are fixed ids (group.row), sorted, so labels, translations and row order never affect the hash.
 	function split(groups) {
 		const all = {},
 			flat = {};
-		groups.forEach(([t, rows]) =>
-			rows.forEach(([k, v, vol]) => {
-				const key = t + "/" + k;
-				all[key] = v;
-				if (!vol) flat[key] = v;
+		groups.forEach(([g, , rows]) =>
+			rows.forEach(([id, , v, vol]) => {
+				all[g + "." + id] = v;
+				if (!vol) flat[g + "." + id] = v;
 			}),
 		);
 		return { all, flat };
 	}
+	const digest = (flat) =>
+		sha(
+			JSON.stringify([
+				FP_VERSION,
+				Object.keys(flat)
+					.sort()
+					.map((k) => [k, flat[k]]),
+			]),
+		);
 
 	async function run() {
 		hex = "";
@@ -526,7 +549,7 @@
 		render();
 		const { all, flat } = split(lastGroups);
 		last = all;
-		hex = await sha(JSON.stringify(flat));
+		hex = await digest(flat);
 		$("#hash").textContent = hex;
 		rings(hex);
 	}
