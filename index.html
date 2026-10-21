@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="tr">
+<html lang="en">
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-		<title>Tarayıcın Seni Ne Kadar Tanıyor?</title>
-		<meta name="description" content="Çerez kullanmadan tarayıcının paylaştığı bilgilerle dijital parmak izinin nasıl oluştuğunu keşfet. Tarayıcı, ekran, donanım ve gizlilik sinyallerini incele." />
+		<title data-i18n="ui.title">Tarayıcın Seni Ne Kadar Tanıyor?</title>
+		<meta name="description" data-i18n-content="ui.lead" content="Çerez kullanmadan tarayıcının paylaştığı bilgilerle dijital parmak izinin nasıl oluştuğunu keşfet. Tarayıcı, ekran, donanım ve gizlilik sinyallerini incele." />
 		<meta name="robots" content="index, follow, max-image-preview:large" />
 		<meta name="theme-color" content="#edf1f5" />
 		<meta name="color-scheme" content="light dark" />
@@ -25,21 +25,19 @@
 	<body>
 		<div class="wrap">
 			<header class="hero">
-				<h1 id="title">Tarayıcın Seni Ne Kadar Tanıyor?</h1>
-				<p class="lead" id="lead">Aşağıdaki değerler çerez olmadan, yalnızca tarayıcının kendiliğinden verdiği bilgilerden toplanır. Hepsi birleşince sana özgü bir izdüşümü oluşur.</p>
-				<svg id="rings" viewBox="0 0 220 220" role="img" aria-label="Parmak izinden üretilen halkalar"></svg>
-				<h2 id="hashTitle" style="margin-top: 4px">Sabit parmak izi</h2>
-				<p class="hash" id="hash">Hesaplanıyor…</p>
-				<p class="lead" id="stat" style="font-size: 14px; margin-bottom: 14px"></p>
+				<h1 data-i18n="ui.title">How well does your browser know you?</h1>
+				<p class="lead" data-i18n="ui.lead">These values are collected without cookies, only from what your browser volunteers. Combined, they form a profile unique to you.</p>
+				<svg id="rings" viewBox="0 0 220 220" role="img" aria-label="Rings generated from the fingerprint" data-i18n-aria-label="ui.rings"></svg>
+				<h2 style="margin-top: 4px" data-i18n="ui.hash">Stable fingerprint</h2>
+				<p class="hash" id="hash">Computing…</p>
 				<div class="btns">
-					<button id="again">Yeniden hesapla</button>
-					<button id="copy">JSON’u kopyala</button>
+					<button id="again" data-i18n="ui.recalculate">Recalculate</button>
+					<button id="copy" data-i18n="ui.copy">Copy JSON</button>
 				</div>
 			</header>
 			<main id="out" aria-live="polite"></main>
 		</div>
-		<script src="assets/i18n.js"></script>
-		<script src="assets/script.js"></script>
+		<script type="module" src="assets/js/main.js"></script>
 		<script async="" src="https://scripts.simpleanalyticscdn.com/latest.js"></script>
 	</body>
 </html>
