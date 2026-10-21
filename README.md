@@ -41,30 +41,6 @@ Different devices may produce the same or similar fingerprints, while a single d
 
 A browser fingerprint is not proof of a person's identity. It is a combination of observable signals that may help distinguish one browsing environment from another.
 
-## Project Structure
-
-```
-index.html
-assets/
-  style.css
-  js/
-    main.js               entry point: collect, render, hash, copy
-    core/
-      collect.js          runs every group and returns raw values
-      fingerprint.js      stable-value selection, SHA-256 digest, FP_VERSION
-      groups/             one module per signal group (browser, screen, graphics, ...)
-    ui/                   rendering and the SVG rings
-    i18n/
-      index.js            language detection and the t() helper
-      locales/            en, tr, es, zh, hi (one file per language, keyed by id)
-    lib/                  small helpers (SHA-256, timeouts, DOM)
-```
-
-- **Add a signal:** add a row object (`id`, `type`, `get`) to a group in `core/groups/`, then add its label to every file in `i18n/locales/`. Bump `FP_VERSION` in `core/fingerprint.js`, because the hash input changes.
-- **Add a language:** copy `i18n/locales/en.js`, translate the values and register it in `i18n/index.js`. Missing keys fall back to English.
-- Rows flagged `volatile: true` are shown but left out of the fingerprint hash.
-- The code uses ES modules, so open the page through a web server (GitHub Pages, `npx serve`, ...). Opening `index.html` directly from disk is blocked by browsers.
-
 ## Privacy Considerations
 
 This project is intended for educational and experimental purposes.
